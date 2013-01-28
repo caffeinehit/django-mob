@@ -4,9 +4,11 @@ when you run "manage.py test".
 
 Replace this with more appropriate tests for your application.
 """
+from django.core.urlresolvers import reverse
 from django.test import TestCase
 from .user_agents import USER_AGENTS
 from mob.middleware import MobileDetectorMiddleware, MobileTemplateMiddleware
+from django.test.client import Client
 
 def request(ua):
     return type('HttpRequest', (object,), {'META': {'HTTP_USER_AGENT': ua}})()
@@ -57,4 +59,17 @@ class UserAgentTest(TestCase):
         req = request(ipad)
         detector.process_request(req)
         self.assertEqual('ipad', req.mobile.slug)        
+
+    def test_mobile_session_key(self):
+        client = Client()
+        ua = {'HTTP_USER_AGENT': 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_3 like Mac OS X; fr-fr) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8F190 Safari/6533.18.5' }
+
+        resp = client.get('/', **ua)
+        self.assertTrue('This is the mobile website.' in resp.content, resp.content)
+        
+        resp = client.get(reverse('mob:on'), follow=True, **ua)
+        self.assertTrue('This is the full website.' in resp.content, resp.content)
+
+        resp = client.get(reverse('mob:off'), follow=True, **ua)
+        self.assertTrue('This is the mobile website.' in resp.content, resp.content)
 

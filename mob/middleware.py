@@ -92,7 +92,7 @@ class MobileTemplateMiddleware(object):
         if not request.is_mobile:
             return response
 
-        if request.session.get(SESSION_KEY_NAME, False):
+        if hasattr(request, 'session') and request.session.get(SESSION_KEY_NAME, False):
             return response
 
         if not isinstance(response.template_name, (list, tuple)):

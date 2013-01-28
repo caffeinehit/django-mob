@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.template.defaultfilters import slugify
 import os
 import re
@@ -36,6 +37,9 @@ USER_AGENTS = [
     'uZard',
     'uZard',
     ]
+
+# Full website cookie name
+SESSION_KEY_NAME = getattr(settings, 'SESSION_KEY_NAME', 'mobile:full-website')
 
 pattern = re.compile('|'.join(USER_AGENTS))
 
@@ -84,13 +88,15 @@ class MobileTemplateMiddleware(object):
 
     def process_template_response(self, request, response):
         assert hasattr(request, 'is_mobile'), "You must install the 'mob.middleware.MobileDetectorMiddleware'"
-
+        
         if not request.is_mobile:
+            return response
+
+        if request.session.get(SESSION_KEY_NAME, False):
             return response
 
         if not isinstance(response.template_name, (list, tuple)):
             response.template_name = [response.template_name]
-
 
         def explode(template_name):
             path, filename = os.path.split(template_name)
